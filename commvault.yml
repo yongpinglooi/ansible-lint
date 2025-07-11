@@ -1,4 +1,4 @@
-- name: Start Out-of-Place Restore
+ - name: Start Out-of-Place Restore
   commvault.ansible.request:
     webserver_hostname: "{{ http_hostname }}"
     method: POST
