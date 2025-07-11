@@ -27,6 +27,6 @@ jobs:
         run: |
           pip install ansible ansible-lint
 
-      - name: Run ansible-lint on playbooks
+      - name: Run ansible-lint on all YAML playbooks
         run: |
-          ansible-lint commvault.yml
+          find . -type f \( -name "*.yml" -o -name "*.yaml" \) -exec ansible-lint {} +
