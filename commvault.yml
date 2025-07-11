@@ -1,73 +1,9 @@
-- name: Out-of-Place Restore Playbook
+- name: Simple Copy Playbook
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: Start Out-of-Place Restore
-      commvault.ansible.request:
-        webserver_hostname: "{{ http_hostname }}"
-        method: POST
-        url: "{0}/commandcenter/api/CreateTask"
-        payload:
-          taskInfo:
-            associations:
-              - clientName: "{{ item.client_name }}"
-                backupsetName: "{{ item.user_backupset }}"
-                subclientName: "{{ item.user_subclient }}"
-                instanceName: "{{ item.instanceName }}"
-                appName: "{{ item.appName }}"
-                applicationId: {{ associate_appID }}
-            task:
-              taskType: 1
-              initiatedFrom: 2
-              policyType: 0
-              taskFlags:
-                disabled: false
-            subTasks:
-              - subTask:
-                  subTaskType: 3
-                  operationType: 1001
-                options:
-                  restoreOptions:
-                    impersonation:
-                      useImpersonation: false
-                    virtualServerRstOption:
-                      isBlockLevelReplication: false
-                      isDiskBrowse: false
-                      viewType: 0
-                      isFileBrowse: true
-                    browseOption:
-                      backupset:
-                        clientName: "{{ item.client_name }}"
-                        backupsetName: "{{ item.user_backupset }}"
-                        applicationId: {{ browseOption_appID }}
-                      timeZone:
-                        TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
-                      commCellId: 2
-                      mediaOption:
-                        proxyForSnapClients:
-                          clientName: "{{ item.proxy_client }}"
-                    destination:
-                      inPlace: false
-                      isLegalHold: false
-                      noOfStreams: 0
-                      destPath:
-                        - "{{ item.dest_path }}"
-                      destClient:
-                        clientName: "{{ item.new_client_name }}"
-                      destinationInstance:
-                        clientName: "{{ item.new_client_name }}"
-                        instanceName: "{{ item.destInst_instName }}"
-                        applicationId: {{ destInst_appID }}
-                    fileOption:
-                      sourceItem:
-                        - "{{ item.restore_point }}"
-                    commonOptions:
-                      restoreToDisk: true
-                      unconditionalOverwrite: false
-                      preserveLevel: 1
-                      stripLevelType: 0
-                      stripLevel: 0
-                      detectRegularExpression: true
-                      wildCard: false
-      register: restore_response
-      failed_when: restore_response.response.errorCode is defined and restore_response.response.errorCode != 0
+    - name: Copy test file to /tmp
+      ansible.builtin.copy:
+        content: "This is a test file"
+        dest: /tmp/testfile.txt
+        mode: '0644'
