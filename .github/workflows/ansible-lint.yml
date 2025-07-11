@@ -11,22 +11,16 @@ on:
       - '**.yaml'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-
+  build:
+    name: Ansible Lint # Naming the build is important to use it as a status check
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - name: Run ansible-lint
+        uses: ansible/ansible-lint@main
+        # optional (see below):
         with:
-          python-version: '3.x'
-
-      - name: Install Ansible and ansible-lint
-        run: |
-          pip install ansible ansible-lint
-
-      - name: Run ansible-lint on all YAML playbooks
-        run: |
-          find . -type f \( -name "*.yml" -o -name "*.yaml" \) -exec ansible-lint {} +
+          args: ""
+          setup_python: "true"
+          working_directory: ""
+          requirements_file: ""
