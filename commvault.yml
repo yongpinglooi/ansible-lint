@@ -35,4 +35,39 @@
                       isDiskBrowse: false
                       viewType: 0
                       isFileBrowse: true
-                    browse
+                    browseOption:
+                      backupset:
+                        clientName: "{{ item.client_name }}"
+                        backupsetName: "{{ item.user_backupset }}"
+                        applicationId: {{ browseOption_appID }}
+                      timeZone:
+                        TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
+                      commCellId: 2
+                      mediaOption:
+                        proxyForSnapClients:
+                          clientName: "{{ item.proxy_client }}"
+                    destination:
+                      inPlace: false
+                      isLegalHold: false
+                      noOfStreams: 0
+                      destPath:
+                        - "{{ item.dest_path }}"
+                      destClient:
+                        clientName: "{{ item.new_client_name }}"
+                      destinationInstance:
+                        clientName: "{{ item.new_client_name }}"
+                        instanceName: "{{ item.destInst_instName }}"
+                        applicationId: {{ destInst_appID }}
+                    fileOption:
+                      sourceItem:
+                        - "{{ item.restore_point }}"
+                    commonOptions:
+                      restoreToDisk: true
+                      unconditionalOverwrite: false
+                      preserveLevel: 1
+                      stripLevelType: 0
+                      stripLevel: 0
+                      detectRegularExpression: true
+                      wildCard: false
+      register: restore_response
+      failed_when: restore_response.response.errorCode is defined and restore_response.response.errorCode != 0
