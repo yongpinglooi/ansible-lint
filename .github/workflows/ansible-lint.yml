@@ -1,0 +1,7 @@
+name: Ansible Lint checker for Push and Pull Events
+
+on:
+  push:
+  pull_request:
+    branches:
+      - '*'
