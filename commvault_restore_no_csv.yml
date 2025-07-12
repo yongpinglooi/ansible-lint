@@ -98,7 +98,7 @@
       when: restore_job_id is defined
 
     - name: Check Job Status
-      commvault.ansible.job_status:
+      commvault.ansible.job.status:
         job_id: "{{ restore_job_id }}"
         wait_for_job_completion: true
       when: restore_job_id is defined
