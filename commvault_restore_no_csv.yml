@@ -1,6 +1,5 @@
 - name: Out-of-Place Restore using commvault.ansible.request module
-  hosts: localhost
-  connection: local
+  hosts: all
   gather_facts: false
 
   tasks:
