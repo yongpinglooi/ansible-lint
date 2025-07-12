@@ -1,9 +1,0 @@
-- name: Simple Copy Playbook
-  hosts: localhost
-  gather_facts: false
-  tasks:
-    - name: Copy test file to /tmp
-      ansible.builtin.copy:
-        content: "This is a test file"
-        dest: /tmp/testfile.txt
-          mode: '0644'
