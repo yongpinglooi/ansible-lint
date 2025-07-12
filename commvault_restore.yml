@@ -1,5 +1,5 @@
 - name: CSV Driven Out-of-Place Restore
-  hosts: localhost
+  hosts: all
   gather_facts: false
   tasks:
   - name: Read CSV file
