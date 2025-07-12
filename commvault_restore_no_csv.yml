@@ -81,11 +81,11 @@
       failed_when: restore_response.response.errorCode is defined and restore_response.response.errorCode != 0
 
     - name: Show restore response
-      debug:
+      ansible.builtin.debug:
         var: restore_response
 
     - name: Extract Job ID from response
-      set_fact:
+      ansible.builtin.set_fact:
         restore_job_id: "{{ restore_response.response.jobIds[0] | int }}"
       when:
         - restore_response.response is defined
@@ -93,7 +93,7 @@
         - restore_response.response.jobIds | length > 0
 
     - name: Display Job ID
-      debug:
+      ansible.builtin.debug:
         var: restore_job_id
       when: restore_job_id is defined
 
@@ -105,6 +105,6 @@
       register: job_status_result
 
     - name: Display Final Job Status
-      debug:
+      ansible.builtin.debug:
         msg: "Job Status: {{ job_status_result.jobStatus }}"
       when: job_status_result is defined
