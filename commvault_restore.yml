@@ -41,7 +41,7 @@
                     subclientName: "{{ item.user_subclient }}"
                     instanceName: "{{ item.instanceName }}"
                     appName: "{{ item.appName }}"
-                    applicationId: {{ associate_appID }}
+                    applicationId: "{{ associate_appID }}"
                 task:
                   taskType: 1
                   initiatedFrom: 2
@@ -65,7 +65,7 @@
                           backupset:
                             clientName: "{{ item.client_name }}"
                             backupsetName: "{{ item.user_backupset }}"
-                            applicationId: {{ browseOption_appID }}
+                            applicationId: "{{ browseOption_appID }}"
                           timeZone:
                             TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
                           commCellId: 2
@@ -83,7 +83,7 @@
                           destinationInstance:
                             clientName: "{{ item.new_client_name }}"
                             instanceName: "{{ item.destInst_instName }}"
-                            applicationId: {{ destInst_appID }}
+                            applicationId: "{{ destInst_appID }}"
                         fileOption:
                           sourceItem:
                             - "{{ item.restore_point }}"
