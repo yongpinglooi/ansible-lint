@@ -2,7 +2,7 @@
   hosts: all
   gather_facts: false
   tasks:
-  - name: Read CSV file
+    - name: Read CSV file
       community.general.read_csv:
         path: "{{ csv_file_path }}"
       register: csv_data
