@@ -1,5 +1,5 @@
 - name: Out-of-Place Restore using commvault.ansible.request module
-  hosts: all
+  hosts: localhost
   gather_facts: false
 
   tasks:
@@ -23,7 +23,7 @@
                 subclientName: "{{ user_subclient }}"
                 instanceName: "{{ instanceName }}"
                 appName: "{{ appName }}"
-                applicationId: "{{ associate_appID | int }}"
+                applicationId: {{ associate_appID | int }}
             task:
               taskType: 1
               initiatedFrom: 2
@@ -47,7 +47,7 @@
                       backupset:
                         clientName: "{{ client_name }}"
                         backupsetName: "{{ user_backupset }}"
-                        applicationId: "{{ browseOption_appID | int }}"
+                        applicationId: {{ browseOption_appID | int }}
                       timeZone:
                         TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
                       commCellId: 2
@@ -65,7 +65,7 @@
                       destinationInstance:
                         clientName: "{{ new_client_name }}"
                         instanceName: "{{ destInst_instName }}"
-                        applicationId: "{{ destInst_appID | int }}"
+                        applicationId: {{ destInst_appID | int }}
                     fileOption:
                       sourceItem:
                         - "{{ restore_point }}"
