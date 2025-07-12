@@ -18,7 +18,7 @@
         verify_ssl: false
 
     - name: Run restore for each item in CSV
-      include_tasks: restore_task.yml
+      ansible.builtin.include_tasks: restore_task.yml
       loop: "{{ csv_data.list }}"
       loop_control:
         loop_var: item
