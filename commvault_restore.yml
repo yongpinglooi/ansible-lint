@@ -2,6 +2,7 @@
   hosts: localhost
   gather_facts: false
   tasks:
+  .
 
     - name: Read CSV file
       community.general.read_csv:
