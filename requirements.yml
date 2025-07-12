@@ -1,3 +1,2 @@
 collections:
-  - name: ansible.commvault
-    source: https://github.com/Commvault/ansiblev2
+  - name: commvault.ansible
