@@ -1,6 +1,7 @@
 - name: CSV Driven Out-of-Place Restore
   hosts: all
   gather_facts: false
+
   tasks:
     - name: Read CSV file
       community.general.read_csv:
@@ -15,14 +16,15 @@
         verify_ssl: false
 
     - name: Process each row in CSV
-      vars:
-        associate_appID: "{{ item.associate_appID | int }}"
-        browseOption_appID: "{{ item.browseOption_appID | int }}"
-        destInst_appID: "{{ item.destInst_appID | int }}"
       loop: "{{ csv_data.list }}"
       loop_control:
         label: "{{ item.client_name }}"
       block:
+        - name: Set scoped variables from item
+          set_fact:
+            associate_appID: "{{ item.associate_appID | int }}"
+            browseOption_appID: "{{ item.browseOption_appID | int }}"
+            destInst_appID: "{{ item.destInst_appID | int }}"
 
         - name: Start Out-of-Place Restore
           commvault.ansible.request:
