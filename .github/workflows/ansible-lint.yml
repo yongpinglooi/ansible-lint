@@ -24,3 +24,4 @@ jobs:
           setup_python: "true"
           working_directory: ""
           requirements_file: "requirements.yml"
+          pre: "true"         
