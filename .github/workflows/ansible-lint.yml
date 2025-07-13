@@ -36,11 +36,11 @@ jobs:
 
       - name: Run ansible-lint and save output
         run: |
-          echo "== Linting Started ==" > artifacts/ansible-lint.log
-          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) \
-            | tee -a artifacts/ansible-lint.log \
-            | xargs -r ansible-lint >> artifacts/ansible-lint.log 2>&1 || true
-
+          echo "== Linting Started =="
+          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) > files.txt
+          cat files.txt | tee -a artifacts/ansible-lint.log
+          cat files.txt | xargs -r ansible-lint 2>&1 | tee -a artifacts/ansible-lint.log || true
+          
       - name: Upload ansible-lint log
         uses: actions/upload-artifact@v4
         with:
