@@ -4,20 +4,13 @@ on:
   workflow_run:
     workflows: ["Ansible Playbook Linting"]
     types:
-      - completed  # runs on both success and failure
-      
-  push:
-    paths:
-      - '**.yml'
-      - '**.yaml'
-  pull_request:
-    paths:
-      - '**.yml'
-      - '**.yaml'
+      - completed
+    branches:
+      - main  # Ensure this matches your default branch
 
 jobs:
   lint:
-    name: Run ansible-lint
+    name: Run ansible-lint syntax check
     runs-on: ubuntu-24.04
 
     steps:
