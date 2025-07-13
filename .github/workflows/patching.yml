@@ -1,15 +1,11 @@
 name: Run Ansible site.yml on EC2
 
 on:
-  workflow_dispatch:  # Manual trigger
-  push:
-    paths:
-      - '**.yml'
-      - '**.yaml'
+  workflow_dispatch:  # Manually triggered
 
 jobs:
   run-ansible:
-    name: Run Ansible site.yml with patching tag
+    name: Run Ansible playbook on EC2
     runs-on: ubuntu-24.04
 
     steps:
@@ -21,12 +17,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Ansible & Collections
+      - name: Install Ansible and required collections
         run: |
           pip install ansible
           if [ -f requirements.yml ]; then
             ansible-galaxy collection install -r requirements.yml --pre
-          fi    
+          fi
 
       - name: Configure SSH access to EC2
         run: |
