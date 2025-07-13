@@ -1,6 +1,6 @@
 ---
 - name: Apply patches and manage services   # This playbook is designed to apply OS patches and manage service roles on all targeted hosts.
-  hosts: localhost   # Specifies that the playbook should run on all hosts in the inventory.
+  hosts: all   # Specifies that the playbook should run on all hosts in the inventory.
   become: true  # Escalates privileges to root (sudo) to perform system-level changes such as patching and service management.
 
   roles:
