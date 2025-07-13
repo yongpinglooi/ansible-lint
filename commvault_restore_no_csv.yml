@@ -1,7 +1,7 @@
 - name: Out-of-Place Restore using commvault.ansible.request module
   hosts: localhost
   gather_facts: false
-  
+
   tasks:
 
     - name: Log in to the Commcell
@@ -114,7 +114,7 @@
       commvault.ansible.request:
         webserver_hostname: "{{ http_hostname }}"
         method: GET
-        url: "{0}/commandcenter/api/v2/Job/{{ restore_job_id }}"
+        url: "{0}/commandcenter/api/Job/{{ restore_job_id }}"
       when: restore_job_id is defined
       register: job_detail_response
 
