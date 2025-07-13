@@ -1,0 +1,47 @@
+---
+# This playbook collects systemd service information and saves the output to files after patching/reboot.
+
+# Step 1: Collect system service facts
+- name: Collect system service facts
+  ansible.builtin.service_facts:
+
+# Step 2: Extract currently running services
+- name: Get running services list
+  ansible.builtin.set_fact:
+    running_services_list: >-
+      {{
+        ansible_facts.services
+        | dict2items
+        | selectattr('value.state', 'defined')
+        | selectattr('value.state', 'equalto', 'running')
+        | map(attribute='key')
+        | sort
+        | list
+      }}
+
+# Step 3: Extract enabled services (robust against missing 'enabled' key)
+- name: Extract enabled services list from ansible_facts.services
+  ansible.builtin.set_fact:
+    enabled_services_list: >-
+      {{
+        ansible_facts.services
+        | dict2items
+        | selectattr('value.status', 'equalto', 'enabled')
+        | map(attribute='key')
+        | sort
+        | list
+      }}
+
+# Step 4: Save running services to a file
+- name: Save running services to a file
+  ansible.builtin.copy:
+    content: "{{ running_services_list | join('\n') }}"
+    dest: "{{ rhel_ol_patch_running_before }}"
+    mode: '0644'
+
+# Step 5: Save enabled services to a file
+- name: Save enabled services to a file
+  ansible.builtin.copy:
+    content: "{{ enabled_services_list | join('\n') }}"
+    dest: "{{ rhel_ol_patch_enabled_before }}"
+    mode: '0644'

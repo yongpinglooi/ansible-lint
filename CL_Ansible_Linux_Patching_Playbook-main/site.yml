@@ -1,0 +1,15 @@
+---
+- name: Apply patches and manage services   # This playbook is designed to apply OS patches and manage service roles on all targeted hosts.
+  hosts: all   # Specifies that the playbook should run on all hosts in the inventory.
+  become: true  # Escalates privileges to root (sudo) to perform system-level changes such as patching and service management.
+
+  roles:
+    - role: rhel_ol_patch
+      # Role responsible for applying patches on RHEL and OEL systems.
+      tags:
+        - patching
+        # Tag assigned for selectively running patching-related tasks within this role.
+    - role: wins_patch
+      # Role responsible for applying Windows Update.
+      tags:
+        - wins_patch

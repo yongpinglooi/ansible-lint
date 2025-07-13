@@ -1,0 +1,12 @@
+galaxy_info:
+  role_name: rhel_ol_patch
+  author: YP
+  description: OS patching role for Red Hat and Oracle Linux
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: EL
+      versions:
+        - all
+
+dependencies: []

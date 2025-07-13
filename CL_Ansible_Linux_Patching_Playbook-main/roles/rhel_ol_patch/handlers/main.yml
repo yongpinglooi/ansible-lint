@@ -1,0 +1,5 @@
+# roles/RHEL6_RHEL7_OSPatch/handlers/main.yml
+---
+- name: Yum-clean-metadata
+  ansible.builtin.command: yum clean metadata
+  changed_when: true

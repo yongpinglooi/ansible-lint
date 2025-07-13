@@ -1,0 +1,12 @@
+---
+
+# rhel_ol_patch_ospatch_level: [none|kernel-security|security|full]
+rhel_ol_patch_ospatch_level: full
+
+# reboot os if updates need to
+# rhel_ol_patch_ospatch_reboot: [true|false]
+#
+rhel_ol_patch_ospatch_reboot: true
+
+# REPO: [LOCAL|RHSM]
+rhel_ol_patch_repo: LOCAL

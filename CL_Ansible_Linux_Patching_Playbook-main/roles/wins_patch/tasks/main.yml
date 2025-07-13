@@ -1,0 +1,9 @@
+---
+- name: Import tasks for Patch Installation
+  ansible.builtin.import_tasks: install_patches.yml
+  tags:
+    - install_patches
+
+- name: Import tasks for Service Checks
+  ansible.builtin.import_tasks: check_services.yml
+  when: run_service_check | default(false)

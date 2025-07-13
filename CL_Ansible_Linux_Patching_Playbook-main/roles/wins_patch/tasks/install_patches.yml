@@ -1,0 +1,6 @@
+- name: Install Windows Update
+  ansible.windows.win_updates:
+    category_names: '*'
+    reboot: false
+  register: update_result
+  notify: Handle Update Failure

@@ -1,0 +1,13 @@
+---
+- name: Load host-specific variables
+  ansible.builtin.include_vars:
+    file: "{{ inventory_hostname }}.yml"  # Load the host-specific service variables
+  when: inventory_hostname is defined  # Ensure the inventory_hostname is available
+
+- name: Ensure services are started
+  ansible.windows.win_service:
+    name: "{{ item.name }}"
+    state: started
+    start_mode: auto
+  loop: "{{ hosts_services[inventory_hostname] }}"  # Loop through the services for the current host
+  when: hosts_services[inventory_hostname] is defined  # Only run if services are defined for this host

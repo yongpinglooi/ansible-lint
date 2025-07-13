@@ -1,0 +1,19 @@
+---
+# This task performs a full OS upgrade using the dnf module.
+# It updates all packages to their latest versions and refreshes the cache.
+
+- name: Perform full package and kernel update for RedHat / Oracle Linux
+  block:
+    - name: Set package manager based on OS
+      ansible.builtin.set_fact:
+        pkg_mgr: "{{ 'dnf' if ansible_distribution_major_version | int >= 8 else 'yum' }}"
+
+    # Step 2: Perform a full OS upgrade using the selected package manager
+    - name: Perform Full OS Upgrade
+      ansible.builtin.package:
+        name: '*'                      # Upgrade all packages
+        state: latest                  # Ensure all packages are up to date
+        update_cache: true            # Refresh the package cache before upgrade
+        use_backend: auto             # Let Ansible use the detected package manager backend
+      vars:
+        ansible_pkg_mgr: "{{ pkg_mgr }}"  # Override the package manager to use (yum or dnf)

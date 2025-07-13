@@ -1,0 +1,20 @@
+Role Name
+=========
+This role will apply security or full patching to RHEL machines.
+
+Requirements
+------------
+Proper repository configuration on machines.
+
+Role Variables
+--------------
+* `rhel_ol_patch_ospatch_reboot:` true
+rhel_ol_patch_ospatch_reboot: [true|false]
+
+Dependencies
+------------
+None so far.
+
+Example Playbook
+----------------
+check test dir for examples

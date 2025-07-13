@@ -1,0 +1,121 @@
+- name: Perform Config Backup Before patching
+  block:
+
+    - name: Ensure output and backup directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ rhel_ol_patch_output_folder }}"
+        - "{{ rhel_ol_patch_dest }}"
+
+    - name: Collect host info
+      ansible.builtin.shell: |
+        set -o pipefail
+        echo "HOST INFORMATION"
+        uname -a
+        cat /etc/redhat-release
+
+        echo ""
+        echo "UPTIME & USER INFO"
+        /usr/bin/uptime
+        who
+
+        echo ""
+        echo "Filesystem Info"
+        fdisk -l 2>/dev/null
+        df -h
+        cat /etc/fstab
+        mount
+
+        if command -v iostat >/dev/null 2>&1; then
+          iostat
+        else
+          echo "iostat not found"
+        fi
+
+        echo ""
+        echo "Hardware Info"
+        grep -E "processor|model name" /proc/cpuinfo
+        cat /proc/meminfo
+
+        echo ""
+        echo "NETWORK INFORMATION"
+        ifconfig -a
+        for nic in $(ls /sys/class/net); do
+          ethtool "$nic"
+        done
+        netstat -rn
+        netstat -in
+        sed -e '/^#/d' /etc/hosts
+        grep -v search /etc/resolv.conf | sed -e '/^#/d'
+
+        echo ""
+        echo "Chkconfig list:"
+        /sbin/chkconfig --list 2>/dev/null || true
+
+        echo "FATAL ERRORS:"
+        grep -i FATAL /var/log/messages | cut -d' ' -f6- | sed 's/[0-9]/0/g' | sort | uniq || true
+
+        echo "ERROR LOGS:"
+        grep -i ERROR /var/log/messages | cut -d' ' -f6- | sed 's/[0-9]/0/g' | sort | uniq || true
+
+        echo "DMESG LOGS:"
+        dmesg | grep -i fail | sed 's/[0-9]/0/g' | sort | uniq || true
+        dmesg | grep -i error | sed 's/[0-9]/0/g' | sort | uniq || true
+      register: full_system_info
+      changed_when: false
+
+    - name: Write full system precheck report
+      ansible.builtin.copy:
+        dest: "{{ rhel_ol_patch_output_file }}"
+        content: |
+          File generated on {{ ansible_date_time.date }}
+          {{ full_system_info.stdout }}
+        mode: '0644'
+
+    - name: Copy configuration files
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ rhel_ol_patch_output_folder }}/"
+        remote_src: true
+        mode: '0600'
+      loop:
+        - /etc/passwd
+        - /etc/shadow
+        - /etc/group
+        - /etc/grub2.cfg
+        - /etc/hosts
+        - /etc/issue
+        - /etc/fstab
+      failed_when: false
+
+    - name: Copy all sudoers config files
+      ansible.builtin.shell: cp -p /etc/sudoers.d/* {{ rhel_ol_patch_output_folder }}/
+      changed_when: false
+      failed_when: false
+
+    - name: Copy *.conf files
+      ansible.builtin.shell: cp -p /etc/*.conf {{ rhel_ol_patch_output_folder }}/
+      changed_when: false
+      failed_when: false
+
+    - name: Remove old archive if exists
+      ansible.builtin.file:
+        path: "{{ rhel_ol_patch_output_folder }}.tar"
+        state: absent
+
+    - name: Create tar archive of collected files
+      ansible.builtin.archive:
+        path: "{{ rhel_ol_patch_output_folder }}"
+        dest: "{{ rhel_ol_patch_output_folder }}.tar"
+        format: tar
+        mode: '0600'
+
+    - name: Move tar to backup folder
+      ansible.builtin.copy:
+        src: "{{ rhel_ol_patch_output_folder }}.tar"
+        dest: "{{ rhel_ol_patch_dest }}/"
+        remote_src: true
+        mode: '0600'

@@ -1,0 +1,88 @@
+---
+- name: Update GRUB default kernel if needed
+  when: ansible_distribution == 'OracleLinux'
+  block:
+    - name: List available kernels in /etc/grub2.cfg
+      ansible.builtin.command: awk -F\' '$1=="menuentry " {print $2}' /etc/grub2.cfg
+      register: kernel_entries
+      changed_when: false
+      # Extract all kernel entries from GRUB config for reference
+
+    - name: Handle Oracle Linux 7
+      when: ansible_distribution_major_version == '7'
+      block:
+        - name: Check the saved kernel entry (OL7)
+          ansible.builtin.shell: "grep '^saved_entry=' /boot/grub2/grubenv || echo 'saved_entry='"
+          register: saved_entry
+          changed_when: false
+
+    - name: Handle Oracle Linux 8/9
+      when: ansible_distribution_major_version in ['8', '9']
+      block:
+        - name: Check the saved kernel entry (OL8/9)
+          ansible.builtin.command: grub2-editenv list
+          register: saved_entry
+          changed_when: false
+
+    - name: Set the default kernel if not pointing to the latest
+      ansible.builtin.command: grub2-set-default 0
+      when:
+        - saved_entry is defined
+        - saved_entry.stdout is defined
+        - "'saved_entry=0' not in saved_entry.stdout"
+      register: set_default_result
+      changed_when: true
+
+    - name: Regenerate GRUB configuration
+      ansible.builtin.command: grub2-mkconfig -o /boot/grub2/grub.cfg
+      when:
+        - set_default_result is defined
+        - set_default_result.rc is defined
+        - set_default_result.rc == 0
+      changed_when: true
+
+- name: Perform reboot and check alive
+  block:
+    - name: Check if reboot is needed
+      ansible.builtin.shell: /usr/bin/needs-restarting -r
+      register: needs_restarting
+      changed_when: false
+      ignore_errors: true
+      # Determine if a reboot is needed; tolerate missing utility
+
+    - name: Reboot host if needed
+      when: needs_restarting.rc != 0
+      block:
+        - name: Restart machine
+          ansible.builtin.shell: "/bin/sleep 5 && /sbin/shutdown -r now"
+          async: 1
+          poll: 0
+          changed_when: true
+          # Trigger a non-blocking reboot with a short delay
+
+        - name: Wait for 3 minutes before checking SSH availability
+          ansible.builtin.pause:
+            minutes: 3
+          when: needs_restarting.rc == 1 or "Reboot is required" in needs_restarting.stdout
+          # Pause to allow reboot to proceed before retrying SSH
+
+        - name: Wait for ssh again available.
+          ansible.builtin.wait_for_connection:
+            connect_timeout: 20
+            sleep: 5
+            delay: 5
+            timeout: 1200
+          # Wait for host to come back online over SSH
+
+        - name: Check if host has booted within last 1200 sec
+          ansible.builtin.shell: test $(cat /proc/uptime | cut -d. -f1) -lt 1200
+          changed_when: false
+          register: reboot_check
+          ignore_errors: true
+          # Validate reboot by checking system uptime
+
+    - name: Alert if host has not been rebooted
+      ansible.builtin.fail:
+        msg: "{{ ansible_host }} has not booted, manual check needed"
+      when: needs_restarting.stdout|int != 0 and RHEL_OL_Patch_ospatch_reboot == true and reboot_check.rc != 0
+      # Fail the playbook if the host hasn't rebooted as expected

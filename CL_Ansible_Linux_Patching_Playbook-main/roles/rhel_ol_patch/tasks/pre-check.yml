@@ -1,0 +1,44 @@
+---
+# Task: Gather pre-patch network routes, mounted filesystems, and IP addresses
+- name: Gather pre-patch network routes, mounted filesystems, and IP addresses
+  block:
+    - name: Gather network, mount, system, and hardware facts
+      ansible.builtin.setup:
+        gather_subset:
+          - network
+          - mounts
+          - hardware
+          - system
+      register: pre_patch_facts
+
+    - name: Save facts to a file for later comparison (optional)
+      ansible.builtin.copy:
+        content: "{{ pre_patch_facts.ansible_facts | to_nice_json }}"
+        dest: "/tmp/pre_patch_facts_{{ inventory_hostname }}.json"
+        mode: '0644'
+
+    - name: Check for RHSM is active or not.
+      when: rhel_ol_patch_repo == "RHSM"
+      block:
+        - name: Validate Subscription
+          ansible.builtin.shell: subscription-manager list | grep Subscribed | wc -l
+          register: rhsmad
+          changed_when: false
+
+        - name: Validate RHSM
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} is not registered with Redhat or Satellite."
+          when: rhsmad.stdout == "0"
+
+    - name: Check for RHN is active or not.
+      when: rhel_ol_patch_repo == "LOCAL"
+      block:
+        - name: Validate RHN Activation
+          ansible.builtin.shell: /usr/sbin/rhn-channel --list | awk -F "-" '{print $1}' | sort -rn | uniq
+          register: rhnchn
+          changed_when: false
+
+        - name: Validate RHN
+          ansible.builtin.fail:
+            msg: "{{ inventory_hostname }} is not registered with Redhat or Satellite."
+          when: rhnchn.stdout == "0"

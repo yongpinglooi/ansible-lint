@@ -1,0 +1,44 @@
+---
+- name: Gather post-patch network routes, mounted filesystems, and IP addresses
+  block:
+
+    - name: Gather network, mount, system, and hardware facts after patch
+      ansible.builtin.setup:
+        gather_subset:
+          - network
+          - mounts
+          - hardware
+          - system
+      register: post_patch_facts
+
+    - name: Compare full system facts (pre vs post patch)
+      ansible.utils.fact_diff:
+        before: "{{ pre_patch_facts.ansible_facts }}"
+        after: "{{ post_patch_facts.ansible_facts }}"
+      register: full_fact_diff
+
+    - name: Print full fact difference (if any)
+      ansible.builtin.debug:
+        var: full_fact_diff.diff_lines
+      when: full_fact_diff.diff_lines | length > 0
+
+    # Optional: Warn if specific changes are detected
+    - name: Warn if IP addresses changed
+      ansible.builtin.debug:
+        msg: "WARNING: IP address changes detected post patch."
+      when: "'ansible_all_ipv4_addresses' in full_fact_diff.diff"
+
+    - name: Warn if mount points changed
+      ansible.builtin.debug:
+        msg: "WARNING: Mount point changes detected post patch."
+      when: "'ansible_mounts' in full_fact_diff.diff"
+
+    - name: Warn if kernel changed
+      ansible.builtin.debug:
+        msg: "WARNING: Kernel changed after patch."
+      when: "'ansible_kernel' in full_fact_diff.diff"
+
+    - name: Warn if OS version changed
+      ansible.builtin.debug:
+        msg: "WARNING: OS distribution or version changed after patch."
+      when: "'ansible_distribution' in full_fact_diff.diff or 'ansible_distribution_version' in full_fact_diff.diff"

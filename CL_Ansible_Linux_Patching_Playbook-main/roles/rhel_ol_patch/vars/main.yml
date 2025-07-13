@@ -1,0 +1,22 @@
+# This is for STEP2_pre_conf_backup.yml
+rhel_ol_patch_server_name: "{{ ansible_hostname }}"
+rhel_ol_patch_dt: "{{ lookup('pipe', 'date +%Y%m%d') }}"
+rhel_ol_patch_output_folder: "/var/tmp/{{ rhel_ol_patch_server_name }}_{{ rhel_ol_patch_dt }}"
+rhel_ol_patch_output_file: "{{ rhel_ol_patch_output_folder }}/{{ rhel_ol_patch_server_name }}_Precheck_{{ rhel_ol_patch_dt }}.txt"
+rhel_ol_patch_dest: "/var/tmp/{{ rhel_ol_patch_server_name }}_{{ rhel_ol_patch_dt }}/ansible_backup"
+
+rhel_ol_patch_running_before: /var/tmp/{{ rhel_ol_patch_server_name }}_{{ rhel_ol_patch_dt }}/running_services_before.txt
+# File path to store the list of currently running services BEFORE the operation.
+# Used to capture baseline service state prior to any changes or patches.
+
+rhel_ol_patch_running_after: /var/tmp/{{ rhel_ol_patch_server_name }}_{{ rhel_ol_patch_dt }}/running_services_after.txt
+# File path to store the list of currently running services AFTER the operation.
+# Used to compare post-operation service states and detect changes or issues.
+
+rhel_ol_patch_enabled_before: /var/tmp/{{ rhel_ol_patch_server_name }}_{{ rhel_ol_patch_dt }}/enabled_services_before.txt
+# File path to store the list of enabled services BEFORE the operation.
+# Captures which services are set to start automatically before changes.
+
+rhel_ol_patch_enabled_after: /var/tmp/{{ rhel_ol_patch_server_name }}_{{ rhel_ol_patch_dt }}/enabled_services_after.txt
+# File path to store the list of enabled services AFTER the operation.
+# Used to verify if the set of enabled services remains consistent or changed.

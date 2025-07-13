@@ -1,0 +1,62 @@
+---
+# tasks file for RHEL6_RHEL7_RHEL8_RHEL9_OSPatch
+
+# Optional: Configure YUM/DNF repository access for Red Hat and Oracle Linux (7, 8, 9)
+- name: Tasks for updating the repository (Red Hat or Oracle Linux)
+  ansible.builtin.import_tasks: update_repo.yml
+  tags:
+    - repo_update
+
+# STEP 1: Generate a CSV report containing host information before patching.
+- name: Tasks for generating the pre-patch CSV report
+  ansible.builtin.import_tasks: STEP1_Linux_Pre_Patch_CSV_report.yml
+  tags:
+    - CSV_report
+
+# STEP 2: Back up critical configuration files before patching.
+- name: Tasks for pre-patch configuration backup
+  ansible.builtin.import_tasks: STEP2_pre_conf_backup.yml
+  tags:
+    - pre_backup
+
+# STEP 3: Perform pre-checks (e.g., disk space, memory, load) specific to the OS before patching.
+- name: Tasks for pre-patch checks
+  ansible.builtin.import_tasks: pre-check.yml
+  tags:
+    - pre_check
+
+# STEP 4: Capture the state of running/enabled services before patching.
+- name: Tasks for services checks (Before)
+  ansible.builtin.import_tasks: before_capture_services.yml
+  tags:
+    - before_services
+
+# STEP 5: Run the appropriate patching procedure based on OS and version.
+- name: Include OS-specific patch tasks based on distribution version
+  ansible.builtin.import_tasks: full-update.yml
+  tags:
+    - os_patch
+
+# STEP 6: Reboot the system post-patch using OS/version-specific instructions.
+- name: Include reboot tasks based on distribution version
+  ansible.builtin.import_tasks: reboot.yml
+  tags:
+    - os_reboot
+
+# STEP 7: Run post-patch system health checks to validate patch success.
+- name: Tasks for post-patch checks
+  ansible.builtin.import_tasks: post-check.yml
+  tags:
+    - post_check
+
+# STEP 8: Re-capture service state after patching and reboot.
+- name: Tasks for services checks (After)
+  ansible.builtin.import_tasks: after_capture_services.yml
+  tags:
+    - after_services
+
+# STEP 9: Compare pre- and post-patch service states and flag differences.
+- name: Tasks for services checks (Compare)
+  ansible.builtin.import_tasks: compare_capture_services.yml
+  tags:
+    - compare_services

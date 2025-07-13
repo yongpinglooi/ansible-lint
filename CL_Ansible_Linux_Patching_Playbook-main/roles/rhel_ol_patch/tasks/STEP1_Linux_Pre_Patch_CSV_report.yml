@@ -1,0 +1,110 @@
+---
+- name: System checks and disk validations
+  block:
+    - name: Get the OS release
+      ansible.builtin.command: cat /etc/redhat-release
+      register: rh_release
+      changed_when: rh_release.rc != 0
+      # Reads the OS release info from the standard Red Hat release file
+
+    - name: Get the VMware Version
+      ansible.builtin.shell: |
+        VAR6=`vmware-toolbox-cmd -v |wc -l`;
+        if [ $VAR6 -eq 1 ] ; then
+          echo `vmware-toolbox-cmd -v`
+        else
+          echo "Physical"
+        fi
+      register: vmware_ver
+      changed_when: vmware_ver.rc !=0
+      # Checks if VMware Tools is installed and returns its version;
+      # if not found, returns "Physical" indicating it's a physical machine
+
+    - name: Find the /boot usage ( /boot is greater than 50 MB )
+      ansible.builtin.shell: |
+        VAR1=`df -mP /boot | awk '{ print $4 }' | tail -1`
+        if [ $VAR1 -gt 50 ] ; then echo "PASS"; else echo "FAIL"; fi
+      register: dfbootres
+      changed_when: "'FAIL' in dfbootres.stdout"
+      # Checks if free space on /boot is greater than 50 MB; sets PASS/FAIL
+
+    - name: Find the root usage ( /(root) is greater than 1000 MB )
+      ansible.builtin.shell: |
+        VAR2=`df -mP / | awk '{ print $4 }' | tail -1`
+        if [ $VAR2 -gt 1024 ] ; then echo "PASS"; else echo "FAIL"; fi
+      register: dfrootres
+      changed_when: "'FAIL' in dfrootres.stdout"
+      # Checks if free space on / (root) is greater than 1024 MB (1GB); PASS/FAIL
+
+    - name: Find if /usr is part of root or not
+      ansible.builtin.shell: mount | egrep "xfs|ext3|ext4|ext2" | grep /usr > /dev/null; echo $?
+      register: usrisrootornot
+      changed_when: false
+      # Checks if /usr is a separate mount or part of root (exit code 0 means mounted separately)
+
+    - name: Find the /usr usage ( /usr is greater than 500 MB )
+      ansible.builtin.shell: |
+        VAR3=`df -mP /usr | awk '{ print $4 }' | tail -1`
+        if [ $VAR3 -gt 500 ] ; then echo "PASS"; else echo "FAIL"; fi
+      register: dfusrres
+      changed_when: "'FAIL' in dfusrres.stdout"
+      # Checks if free space on /usr is greater than 500 MB; PASS/FAIL
+
+    - name: Find if /var is part of root or not
+      ansible.builtin.shell: mount | egrep "xfs|ext3|ext4|ext2" | grep /var > /dev/null; echo $?
+      register: varisrootornot
+      changed_when: false
+      # Checks if /var is a separate mount or part of root
+
+    - name: Find the /var usage ( /var is greater than 500 MB )
+      ansible.builtin.shell: |
+        VAR4=`df -mP /var | awk '{ print $4 }' | tail -1`
+        if [ $VAR4 -gt 500 ] ; then echo "PASS"; else echo "FAIL"; fi
+      register: dfvarres
+      changed_when: "'FAIL' in dfvarres.stdout"
+      # Checks if free space on /var is greater than 500 MB; PASS/FAIL
+
+    - name: Find the /tmp usage ( /usr is greater than 100 MB )
+      ansible.builtin.shell: |
+        VAR5=`df -mP /tmp | awk '{ print $4 }' | tail -1`
+        if [ $VAR5 -gt 100 ] ; then echo "PASS"; else echo "FAIL"; fi
+      register: dftmpres
+      changed_when: "'FAIL' in dftmpres.stdout"
+      # Checks if free space on /tmp is greater than 100 MB; PASS/FAIL
+
+    - name: Set Fact varisroot
+      ansible.builtin.set_fact:
+        varisroot: "{% if varisrootornot.stdout == '0' %}NO{% else %}YES{% endif %}"
+      # Sets fact indicating if /var is part of root ('YES') or separate ('NO')
+
+    - name: Set Fact usrisroot
+      ansible.builtin.set_fact:
+        usrisroot: "{% if usrisrootornot.stdout == '0' %}NO{% else %}YES{% endif %}"
+      # Sets fact indicating if /usr is part of root ('YES') or separate ('NO')
+
+    - name: Set Fact Result Pass
+      ansible.builtin.set_fact:
+        final_result: PASSED
+      when: >
+        dfbootres.stdout == "PASS" and
+        dfrootres.stdout == "PASS" and
+        dfvarres.stdout == "PASS" and
+        dfusrres.stdout == "PASS" and
+        dftmpres.stdout == "PASS"
+      # Final result is PASSED only if all partition free space checks passed
+
+    - name: Set Fact Result Fail
+      ansible.builtin.set_fact:
+        final_result: FAILED
+      when: >
+        dfbootres.stdout != "PASS" or
+        dfrootres.stdout != "PASS" or
+        dfvarres.stdout != "PASS" or
+        dfusrres.stdout != "PASS" or
+        dftmpres.stdout != "PASS"
+      # Final result is FAILED if any partition free space check failed
+
+    - name: Fail if system checks did not pass
+      ansible.builtin.fail:
+        msg: "System checks failed. Disk space insufficient on one or more mount points."
+      when: final_result == "FAILED"

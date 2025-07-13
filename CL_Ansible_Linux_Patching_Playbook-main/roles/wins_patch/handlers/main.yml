@@ -1,0 +1,2 @@
+- name: Handle Update Failure
+  ansible.builtin.import_tasks: install_patch_handlers.yml

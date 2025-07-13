@@ -1,0 +1,15 @@
+- name: Handle Update Failure
+  when: update_result.failed | default(false)
+  block:
+    - name: Retry installing Windows Updates
+      ansible.windows.win_updates:
+        category_names: '*'
+        reboot: false
+      register: retry_result
+      until: retry_result.failed == false
+      retries: 3
+      delay: 10
+
+    - name: Log failure if retrying doesn't work
+      ansible.builtin.debug:
+        msg: "Windows update failed after retries."

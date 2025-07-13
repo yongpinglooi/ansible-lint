@@ -1,0 +1,74 @@
+- name: Configure OS Repositories when enabled
+  when: rhel_ol_patch_enable_repo_config | bool
+  block:
+    # OL 7 Tasks
+    - name: Update Repository for Oracle Linux 7
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '7'
+      block:
+        - name: Update repository (for OL 7)
+          ansible.builtin.yum_repository:
+            name: "{{ repo_name }}"
+            description: Oracle Linux {{ ansible_distribution_major_version }} Update installation media copy
+            baseurl: http://{{ ip_address_repo }}/pulp/content/Default_Organization/Library/custom/OEL_Repo/OEL_{{ ansible_distribution_major_version }}_latest/
+            gpgcheck: false
+            enabled: true
+            file: "{{ repo_file_name }}"
+          notify: Yum-clean-metadata
+
+    # OL 8 and 9 Tasks
+    - name: Add Repository for Oracle Linux 8 or 9
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version in ['8', '9']
+      block:
+        - name: Add BaseOS repository (for OL 8/9)
+          ansible.builtin.yum_repository:
+            name: Oracle Linux {{ ansible_distribution_major_version }}-for-x86_64-baseos-rpms
+            description: Oracle Linux {{ ansible_distribution_major_version }} for x86_64 - BaseOS (RPMs)
+            baseurl: http://{{ ip_address_repo }}/pulp/content/Default_Organization/Library/custom/OEL_Repo/OEL_{{ ansible_distribution_major_version }}_BaseOS/
+            gpgcheck: false
+            enabled: true
+            file: "{{ repo_file_name }}"
+
+        - name: Add AppStream repository (for OL 8/9)
+          ansible.builtin.yum_repository:
+            name: Oracle Linux {{ ansible_distribution_major_version }}-for-x86_64-appstream-rpms
+            description: Oracle Linux {{ ansible_distribution_major_version }} for x86_64 - AppStream (RPMs)
+            baseurl: http://{{ ip_address_repo }}/pulp/content/Default_Organization/Library/custom/OEL_Repo/OEL_{{ ansible_distribution_major_version }}_AppStream/
+            gpgcheck: false
+            enabled: true
+            file: "{{ repo_file_name }}"
+
+    # RHEL 7 Tasks
+    - name: Update Repository for RedHat 7
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version == '7'
+      block:
+        - name: Update repository (for RHEL 7)
+          ansible.builtin.yum_repository:
+            name: "{{ repo_name }}"
+            description: Red Hat Enterprise Linux {{ ansible_distribution_major_version }} Update installation media copy
+            baseurl: http://{{ ip_address_repo }}/pulp/content/Default_Organization/Library/custom/Red_Hat_Enterprise_Linux/RHEL{{ ansible_distribution_major_version }}_RPMS/
+            gpgcheck: false
+            enabled: true
+            file: "{{ repo_file_name }}"
+          notify: Yum-clean-metadata
+
+    # RHEL 8 and 9 Tasks
+    - name: Add Repository for RedHat 8 or 9
+      when: ansible_distribution == 'RedHat' and ansible_distribution_major_version in ['8', '9']
+      block:
+        - name: Add BaseOS repository (for RHEL 8/9)
+          ansible.builtin.yum_repository:
+            name: rhel-{{ ansible_distribution_major_version }}-for-x86_64-baseos-rpms
+            description: Red Hat Enterprise Linux {{ ansible_distribution_major_version }} for x86_64 - BaseOS (RPMs)
+            baseurl: http://{{ ip_address_repo }}/pulp/content/Default_Organization/Library/custom/Red_Hat_Enterprise_Linux/RHEL{{ ansible_distribution_major_version }}_BaseOS/
+            gpgcheck: false
+            enabled: true
+            file: "{{ repo_file_name }}"
+
+        - name: Add AppStream repository (for RHEL 8/9)
+          ansible.builtin.yum_repository:
+            name: rhel-{{ ansible_distribution_major_version }}-for-x86_64-appstream-rpms
+            description: Red Hat Enterprise Linux {{ ansible_distribution_major_version }} for x86_64 - AppStream (RPMs)
+            baseurl: http://{{ ip_address_repo }}/pulp/content/Default_Organization/Library/custom/Red_Hat_Enterprise_Linux/RHEL{{ ansible_distribution_major_version }}_AppStream/
+            gpgcheck: false
+            enabled: true
+            file: "{{ repo_file_name }}"
