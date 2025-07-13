@@ -109,7 +109,7 @@
       ansible.builtin.debug:
         msg: "Job Status: {{ job_status_result.jobStatus }}"
       when: job_status_result is defined
- 
+
     - name: Get detailed job info
       commvault.ansible.request:
         webserver_hostname: "{{ http_hostname }}"
