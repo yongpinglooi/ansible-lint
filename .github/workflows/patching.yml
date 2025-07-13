@@ -1,11 +1,15 @@
 name: Run Ansible site.yml on EC2
 
 on:
-  workflow_dispatch:  # Manually triggered
+  workflow_dispatch:  # Manual trigger
+  push:
+    paths:
+      - '**.yml'
+      - '**.yaml'
 
 jobs:
   run-ansible:
-    name: Run Ansible playbook on EC2
+    name: Run Ansible site.yml with patching tag
     runs-on: ubuntu-24.04
 
     steps:
@@ -17,7 +21,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Ansible and required collections
+      - name: Install Ansible & Collections
         run: |
           pip install ansible
           if [ -f requirements.yml ]; then
@@ -27,15 +31,17 @@ jobs:
       - name: Configure SSH access to EC2
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
 
       - name: Run Ansible playbook (site.yml)
         run: |
           ansible-playbook site.yml \
             -i "${{ secrets.EC2_HOST }}," \
-            -u ${{ secrets.EC2_USER }} \
-            --private-key ~/.ssh/id_rsa \
+            -u "${{ secrets.EC2_USER }}" \
+            --private-key ~/.ssh/id_ed25519 \
             --tags patching \
             --skip-tags repo_update
