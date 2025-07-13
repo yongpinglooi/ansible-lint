@@ -28,11 +28,21 @@ jobs:
           pip install ansible ansible-lint
           ansible-galaxy collection install -r requirements.yml --pre
 
+      - name: Create artifacts directory
+        run: mkdir -p artifacts
+
       - name: Show all .yml files in repo (debug)
         run: |
-          echo "Found YAML files:"
-          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \)
+          echo "Found YAML files:" > artifacts/ansible-lint.log
+          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) >> artifacts/ansible-lint.log
 
-      - name: Run ansible-lint on root YAML files only
+      - name: Run ansible-lint and capture output
         run: |
-          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) | xargs -r ansible-lint
+          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) \
+          | xargs -r ansible-lint >> artifacts/ansible-lint.log 2>&1 || true
+
+      - name: Upload linting log as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ansible-lint-report
+          path: artifacts/ansible-lint.log
