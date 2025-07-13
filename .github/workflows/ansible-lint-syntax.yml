@@ -1,0 +1,56 @@
+name: Ansible Playbook Linting
+
+on:
+  push:
+    paths:
+      - '**.yml'
+      - '**.yaml'
+  pull_request:
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+jobs:
+  lint:
+    name: Run ansible-lint
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ansible and ansible-lint
+        run: |
+          pip install ansible ansible-lint
+          if [ -f requirements.yml ]; then
+            ansible-galaxy collection install -r requirements.yml --pre
+          fi
+
+      - name: Create artifact directory
+        run: mkdir -p artifacts
+
+      - name: Run ansible-playbook syntax checks
+        run: |
+          echo "== Syntax Check Started ==" | tee -a artifacts/ansible-lint.log
+          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) > files.txt
+          while read file; do
+            echo "Checking syntax for $file" | tee -a artifacts/ansible-lint.log
+            ansible-playbook "$file" --syntax-check 2>&1 | tee -a artifacts/ansible-lint.log || true
+          done < files.txt
+
+      - name: Run ansible-lint and save output
+        run: |
+          echo "== Linting Started ==" | tee -a artifacts/ansible-lint.log
+          cat files.txt | tee -a artifacts/ansible-lint.log
+          cat files.txt | xargs -r ansible-lint 2>&1 | tee -a artifacts/ansible-lint.log || true
+
+      - name: Upload ansible-lint log
+        uses: actions/upload-artifact@v4
+        with:
+          name: ansible-lint-log
+          path: artifacts/ansible-lint.log
