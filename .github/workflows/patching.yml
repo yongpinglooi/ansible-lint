@@ -1,0 +1,42 @@
+name: Ansible Run - Patching Only
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+jobs:
+  patch:
+    name: Run patching tasks via Ansible
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          pip install ansible
+
+      - name: Add EC2 SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run Ansible playbook with tags
+        run: |
+          ansible-playbook playbook.yml \
+            -i "${{ secrets.EC2_HOST }}," \
+            -u ${{ secrets.EC2_USER }} \
+            --private-key ~/.ssh/id_rsa \
+            --tags patching \
+            --skip-tags repo_update
