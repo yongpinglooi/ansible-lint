@@ -11,12 +11,13 @@ on:
       - '**.yaml'
 
 jobs:
-  build:
-    name: Ansible Lint
+  lint:
+    name: Run ansible-lint
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,23 +27,20 @@ jobs:
       - name: Install Ansible and ansible-lint
         run: |
           pip install ansible ansible-lint
-          ansible-galaxy collection install -r requirements.yml --pre
+          if [ -f requirements.yml ]; then
+            ansible-galaxy collection install -r requirements.yml --pre
+          fi
 
-      - name: Create artifacts directory
-        run: mkdir -p artifacts
-
-      - name: Show all .yml files in repo (debug)
+      - name: Run ansible-lint recursively and capture output
         run: |
-          echo "Found YAML files:" > artifacts/ansible-lint.log
-          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) >> artifacts/ansible-lint.log
+          mkdir -p artifacts
+          echo "== ansible-lint run ==" > artifacts/ansible-lint.log
+          find . -type f \( -name "*.yml" -o -name "*.yaml" \) \
+            | tee -a artifacts/ansible-lint.log \
+            | xargs -r ansible-lint >> artifacts/ansible-lint.log 2>&1 || true
 
-      - name: Run ansible-lint and capture output
-        run: |
-          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) \
-          | xargs -r ansible-lint >> artifacts/ansible-lint.log 2>&1 || true
-
-      - name: Upload linting log as artifact
+      - name: Upload lint log as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ansible-lint-report
+          name: ansible-lint-log
           path: artifacts/ansible-lint.log
