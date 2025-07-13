@@ -5,8 +5,7 @@ on:
     workflows: ["Ansible Playbook Linting"]
     types:
       - completed  # runs on both success and failure
-
-on:
+      
   push:
     paths:
       - '**.yml'
