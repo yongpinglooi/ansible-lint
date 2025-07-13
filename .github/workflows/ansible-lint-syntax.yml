@@ -1,4 +1,10 @@
-name: Ansible Playbook Linting
+name: Ansible Playbook Linting - Syntax
+
+on:
+  workflow_run:
+    workflows: ["Ansible Playbook Linting"]
+    types:
+      - completed  # runs on both success and failure
 
 on:
   push:
