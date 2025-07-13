@@ -5,22 +5,22 @@
       ansible.builtin.slurp:
         src: "{{ rhel_ol_patch_running_before }}"
       register: running_before_slurped
-    
+
     - name: Slurp running services AFTER patch
       ansible.builtin.slurp:
         src: "{{ rhel_ol_patch_running_after }}"
       register: running_after_slurped
-    
+
     - name: Slurp enabled services BEFORE patch
       ansible.builtin.slurp:
         src: "{{ rhel_ol_patch_enabled_before }}"
       register: enabled_before_slurped
-    
+
     - name: Slurp enabled services AFTER patch
       ansible.builtin.slurp:
         src: "{{ rhel_ol_patch_enabled_after }}"
       register: enabled_after_slurped
-    
+
     # Step 2: Decode base64, trim whitespace, and split lines
     - name: Decode and normalize service data
       ansible.builtin.set_fact:
@@ -28,7 +28,7 @@
         running_after: "{{ running_after_slurped.content | b64decode | split('\n') | map('trim') | reject('equalto', '') | list | sort }}"
         enabled_before: "{{ enabled_before_slurped.content | b64decode | split('\n') | map('trim') | reject('equalto', '') | list | sort }}"
         enabled_after: "{{ enabled_after_slurped.content | b64decode | split('\n') | map('trim') | reject('equalto', '') | list | sort }}"
-    
+
     # Step 3: Run fact_diff on running and enabled services
     - name: Compare RUNNING before vs after
       ansible.utils.fact_diff:
@@ -36,7 +36,7 @@
         after: "{{ running_after }}"
       register: diff_running
       when: running_before != running_after
-    
+
     - name: Compare ENABLED before vs after
       ansible.utils.fact_diff:
         before: "{{ enabled_before }}"
