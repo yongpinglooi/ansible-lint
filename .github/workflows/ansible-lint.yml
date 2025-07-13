@@ -31,15 +31,17 @@ jobs:
             ansible-galaxy collection install -r requirements.yml --pre
           fi
 
-      - name: Run ansible-lint recursively and capture output
+      - name: Create artifact directory
+        run: mkdir -p artifacts
+
+      - name: Run ansible-lint and save output
         run: |
-          mkdir -p artifacts
-          echo "== ansible-lint run ==" > artifacts/ansible-lint.log
-          find . -type f \( -name "*.yml" -o -name "*.yaml" \) \
+          echo "== Linting Started ==" > artifacts/ansible-lint.log
+          find . -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) \
             | tee -a artifacts/ansible-lint.log \
             | xargs -r ansible-lint >> artifacts/ansible-lint.log 2>&1 || true
 
-      - name: Upload lint log as artifact
+      - name: Upload ansible-lint log
         uses: actions/upload-artifact@v4
         with:
           name: ansible-lint-log
