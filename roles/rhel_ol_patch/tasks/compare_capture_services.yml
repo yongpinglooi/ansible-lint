@@ -43,18 +43,3 @@
         after: "{{ enabled_after }}"
       register: diff_enabled
       when: enabled_before != enabled_after
-    
-    # Step 4: Show diff output for RUNNING and ENABLED
-    - name: Show RUNNING-services changes
-      ansible.builtin.debug:
-        msg: |
-          === Running Services: BEFORE vs AFTER ===
-          {{ diff_running.changes.lines | join('\n') }}
-      when: diff_running is defined and diff_running.changes is defined and diff_running.changes.lines | length > 0
-    
-    - name: Show ENABLED-services changes
-      ansible.builtin.debug:
-        msg: |
-          === Enabled Services: BEFORE vs AFTER ===
-          {{ diff_enabled.changes.lines | join('\n') }}
-      when: diff_enabled is defined and diff_enabled.changes is defined and diff_enabled.changes.lines | length > 0
