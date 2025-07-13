@@ -31,7 +31,7 @@ jobs:
             ansible-galaxy collection install -r requirements.yml --pre
           fi
 
-      - name: Create artifact directory
+      - name: Create artifact directory 1
         run: mkdir -p artifacts
 
       - name: Run ansible-lint and save output
