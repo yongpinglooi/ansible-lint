@@ -1,7 +1,7 @@
 - name: Comparison of captured services
   block:
 
-    # Step 1: Load service lists using slurp
+    # Step 1: Slurp service files
     - name: Slurp running services before patch
       ansible.builtin.slurp:
         src: "{{ rhel_ol_patch_running_before }}"
@@ -12,46 +12,33 @@
         src: "{{ rhel_ol_patch_running_after }}"
       register: running_after_slurped
 
-    - name: Slurp enabled services before patch
-      ansible.builtin.slurp:
-        src: "{{ rhel_ol_patch_enabled_before }}"
-      register: enabled_before_slurped
-
     - name: Slurp enabled services after patch
       ansible.builtin.slurp:
         src: "{{ rhel_ol_patch_enabled_after }}"
       register: enabled_after_slurped
 
-    # Step 2: Decode base64 content into service lists
-    - name: Decode slurped data
+    # Step 2: Decode and clean data (strip trailing CR or whitespace)
+    - name: Normalize decoded service data
       ansible.builtin.set_fact:
-        running_before: "{{ running_before_slurped.content | b64decode | splitlines() | reject('equalto', '') | list }}"
-        running_after: "{{ running_after_slurped.content | b64decode | splitlines() | reject('equalto', '') | list }}"
-        enabled_before: "{{ enabled_before_slurped.content | b64decode | splitlines() | reject('equalto', '') | list }}"
-        enabled_after: "{{ enabled_after_slurped.content | b64decode | splitlines() | reject('equalto', '') | list }}"
+        running_before: "{{ running_before_slurped.content | b64decode | split('\n') | map('trim') | reject('equalto', '') | list | sort }}"
+        running_after: "{{ running_after_slurped.content | b64decode | split('\n') | map('trim') | reject('equalto', '') | list | sort }}"
+        enabled_after: "{{ enabled_after_slurped.content | b64decode | split('\n') | map('trim') | reject('equalto', '') | list | sort }}"
 
-    # Step 3: Use ansible.utils.fact_diff module
-    - name: Run fact_diff on running services
-      ansible.utils.fact_diff:
-        before: "{{ running_before }}"
-        after: "{{ running_after }}"
-      register: running_diff
-      when: running_before != running_after
+    # Step 3: Calculate diff between running_after and enabled_after
+    - name: Calculate running-only and enabled-only services
+      ansible.builtin.set_fact:
+        running_only: "{{ running_after | difference(enabled_after) }}"
+        enabled_only: "{{ enabled_after | difference(running_after) }}"
 
-    - name: Run fact_diff on enabled services
-      ansible.utils.fact_diff:
-        before: "{{ enabled_before }}"
-        after: "{{ enabled_after }}"
-      register: enabled_diff
-      when: enabled_before != enabled_after
-
-    # Step 4: Show diff output
-    - name: Show diff for running services
+    # Step 4: Print unified diff
+    - name: Show unified diff between running_after and enabled_after
       ansible.builtin.debug:
-        var: running_diff.diff_lines
-      when: running_before != running_after
-
-    - name: Show diff for enabled services
-      ansible.builtin.debug:
-        var: enabled_diff.diff_lines
-      when: enabled_before != enabled_after
+        msg: |
+          === Diff: running_after vs enabled_after ===
+          {% for svc in running_only %}
+          - [RUNNING_ONLY] {{ svc }}
+          {% endfor %}
+          {% for svc in enabled_only %}
+          + [ENABLED_ONLY] {{ svc }}
+          {% endfor %}
+      when: running_only | length > 0 or enabled_only | length > 0
