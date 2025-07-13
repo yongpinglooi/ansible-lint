@@ -9,7 +9,7 @@ on:
 
 jobs:
   run-ansible:
-    name: Run Ansible site.yml with patching tag
+    name: Run Ansible Playbook with Tags
     runs-on: ubuntu-24.04
 
     steps:
@@ -31,17 +31,16 @@ jobs:
       - name: Configure SSH access to EC2
         run: |
           mkdir -p ~/.ssh
-          printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
-      - name: Run Ansible playbook (site.yml)
+      - name: Run Ansible Playbook
         run: |
           ansible-playbook site.yml \
             -i "${{ secrets.EC2_HOST }}," \
-            -u "${{ secrets.EC2_USER }}" \
-            --private-key ~/.ssh/id_ed25519 \
+            -u ${{ secrets.EC2_USER }} \
+            --private-key ~/.ssh/id_rsa \
             --tags patching \
             --skip-tags repo_update
