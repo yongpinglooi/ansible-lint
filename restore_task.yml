@@ -1,8 +1,8 @@
-- name: Set scoped variables from item
+- name: Set scoped variables from item (strip quotes and convert to int)
   ansible.builtin.set_fact:
-    associate_appID: "{{ item.associate_appID | int }}"
-    browseOption_appID: "{{ item.browseOption_appID | int }}"
-    destInst_appID: "{{ item.destInst_appID | int }}"
+    associate_appID: "{{ item.associate_appID | regex_replace('^\"?(.*?)\"?$', '\\1') | int }}"
+    browseOption_appID: "{{ item.browseOption_appID | regex_replace('^\"?(.*?)\"?$', '\\1') | int }}"
+    destInst_appID: "{{ item.destInst_appID | regex_replace('^\"?(.*?)\"?$', '\\1') | int }}"
 
 - name: Start Out-of-Place Restore
   commvault.ansible.request:
@@ -17,7 +17,7 @@
             subclientName: "{{ item.user_subclient }}"
             instanceName: "{{ item.instanceName }}"
             appName: "{{ item.appName }}"
-            applicationId: {{ associate_appID }}
+            applicationId: "{{ associate_appID }}"
         task:
           taskType: 1
           initiatedFrom: 2
@@ -41,7 +41,7 @@
                   backupset:
                     clientName: "{{ item.client_name }}"
                     backupsetName: "{{ item.user_backupset }}"
-                    applicationId: {{ browseOption_appID }}
+                    applicationId: "{{ browseOption_appID }}"
                   timeZone:
                     TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
                   commCellId: 2
@@ -59,7 +59,7 @@
                   destinationInstance:
                     clientName: "{{ item.new_client_name }}"
                     instanceName: "{{ item.destInst_instName }}"
-                    applicationId: {{ destInst_appID }}
+                    applicationId: "{{ destInst_appID }}"
                 fileOption:
                   sourceItem:
                     - "{{ item.restore_point }}"
@@ -110,7 +110,7 @@
     url: "{0}/commandcenter/api/Job/{{ restore_job_id }}"
   when: restore_job_id is defined
   register: job_detail_response
-  
+
 - name: Display restore destination info
   ansible.builtin.debug:
     msg:
