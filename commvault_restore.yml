@@ -2,20 +2,13 @@
   hosts: localhost
   gather_facts: false
   vars:
-    csv_file_path: "./restore_tasks.csv"
+    csv_file_path: "./restore.csv"
 
   tasks:
     - name: Read CSV file
       community.general.read_csv:
         path: "{{ csv_file_path }}"
       register: csv_data
-
-    - name: Log in to Commcell
-      commvault.ansible.login:
-        webserver_hostname: "{{ http_hostname }}"
-        commcell_username: "{{ http_username }}"
-        commcell_password: "{{ http_password }}"
-        verify_ssl: false
 
     - name: Run restore for each item in CSV
       ansible.builtin.include_tasks: restore_task.yml
