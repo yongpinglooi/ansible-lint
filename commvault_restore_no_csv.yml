@@ -7,7 +7,7 @@
 
   tasks:
     - name: Strip quotes from app ID variables using regex
-      set_fact:
+      ansible.builtin.set_fact:
         associate_appID_unquoted: "{{ associate_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
         browseOption_appID_unquoted: "{{ browseOption_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
         destInst_appID_unquoted: "{{ destInst_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
@@ -83,11 +83,11 @@
       failed_when: restore_response.response.errorCode is defined and restore_response.response.errorCode != 0
 
     - name: Show restore response
-      debug:
+      ansible.builtin.debug:
         var: restore_response
 
     - name: Extract Job ID from response
-      set_fact:
+      ansible.builtin.set_fact:
         restore_job_id: "{{ restore_response.response.jobIds[0] | int }}"
       when:
         - restore_response.response is defined
@@ -95,7 +95,7 @@
         - restore_response.response.jobIds | length > 0
 
     - name: Display Job ID
-      debug:
+      ansible.builtin.debug:
         var: restore_job_id
       when: restore_job_id is defined
 
@@ -107,7 +107,7 @@
       register: job_status_result
 
     - name: Display Final Job Status
-      debug:
+      ansible.builtin.debug:
         msg: "Job Status: {{ job_status_result.jobStatus }}"
       when: job_status_result is defined
 
@@ -120,7 +120,7 @@
       register: job_detail_response
 
     - name: Display restore destination info
-      debug:
+      ansible.builtin.debug:
         msg:
           - "Restore Destination Client: {{ job_detail_response.response.destination.clientName | default('N/A') }}"
           - "Restore Destination Path: {{ job_detail_response.response.destination.destPath | default([]) }}"
