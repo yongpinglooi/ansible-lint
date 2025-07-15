@@ -12,6 +12,14 @@
         browseOption_appID_unquoted: "{{ browseOption_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
         destInst_appID_unquoted: "{{ destInst_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
 
+    - name: Log in to the Commcell
+      commvault.ansible.login:
+        webserver_hostname: "{{ http_hostname }}"
+        commcell_username: "{{ http_username }}"
+        commcell_password: "{{ http_password }}"
+        verify_ssl: false
+      register: login_response
+
     - name: Start Out-of-Place Restore Task
       commvault.ansible.request:
         webserver_hostname: "{{ http_hostname }}"

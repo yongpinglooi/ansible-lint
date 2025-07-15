@@ -18,7 +18,7 @@
             subclientName: "{{ item.user_subclient }}"
             instanceName: "{{ item.instanceName }}"
             appName: "{{ item.appName }}"
-            applicationId: "{{ associate_appID }}"
+            applicationId: "{{ associate_appID_unquoted }}"
         task:
           taskType: 1
           initiatedFrom: 2
@@ -42,7 +42,7 @@
                   backupset:
                     clientName: "{{ item.client_name }}"
                     backupsetName: "{{ item.user_backupset }}"
-                    applicationId: "{{ browseOption_appID }}"
+                    applicationId: "{{ browseOption_appID_unquoted }}"
                   timeZone:
                     TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
                   commCellId: 2
@@ -60,7 +60,7 @@
                   destinationInstance:
                     clientName: "{{ item.new_client_name }}"
                     instanceName: "{{ item.destInst_instName }}"
-                    applicationId: "{{ destInst_appID }}"
+                    applicationId: "{{ destInst_appID_unquoted }}"
                 fileOption:
                   sourceItem:
                     - "{{ item.restore_point }}"
@@ -118,5 +118,5 @@
       - "Restore Destination Client: {{ job_detail_response.response.jobs[0].jobSummary.destinationClient.clientName | default('N/A') }}"
       - "Restore Destination Path: {{ item.dest_path }}"
       - "Job Phase: {{ job_detail_response.response.jobs[0].jobSummary.localizedOperationName | default('N/A') }}"
-      - "Job Status: {{ job_detail_response.response.jobs[0].localizedOperationName.status | default('N/A') }}"
+      - "Job Status: {{ job_detail_response.response.jobs[0].jobSummary.status | default('N/A') }}"
   when: job_detail_response is defined
