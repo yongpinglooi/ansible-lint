@@ -1,8 +1,9 @@
 - name: Set scoped variables from item (strip quotes and convert to int)
   ansible.builtin.set_fact:
-    associate_appID: "{{ item.associate_appID | regex_replace('^\"?(.*?)\"?$', '\\1') | int }}"
-    browseOption_appID: "{{ item.browseOption_appID | regex_replace('^\"?(.*?)\"?$', '\\1') | int }}"
-    destInst_appID: "{{ item.destInst_appID | regex_replace('^\"?(.*?)\"?$', '\\1') | int }}"
+    associate_appID_unquoted: "{{ item.associate_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+    browseOption_appID_unquoted: "{{ item.browseOption_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+    destInst_appID_unquoted: "{{ item.destInst_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+
 
 - name: Start Out-of-Place Restore
   commvault.ansible.request:

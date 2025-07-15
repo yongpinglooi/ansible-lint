@@ -3,6 +3,7 @@
   gather_facts: false
   vars:
     csv_file_path: "./restore.csv"
+    regex_strip_quotes: "^['\"]?(.*?)['\"]?$"
 
   tasks:
     - name: Read CSV file
