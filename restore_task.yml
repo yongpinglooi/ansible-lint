@@ -100,7 +100,7 @@
 
 - name: Display Final Job Status
   ansible.builtin.debug:
-    msg: "Job Status: {{ job_status_result.jobStatus }}"
+    msg: "Job Status: {{ job_status_result.response.jobs[0].jobSummary.status | default('Unknown') }}"
   when: job_status_result is defined
 
 - name: Get detailed job info
@@ -114,8 +114,8 @@
 - name: Display restore destination info
   ansible.builtin.debug:
     msg:
-      - "Restore Destination Client: {{ job_detail_response.response.destination.clientName | default('N/A') }}"
-      - "Restore Destination Path: {{ job_detail_response.response.destination.destPath | default([]) }}"
-      - "Job Phase: {{ job_detail_response.response.phaseName | default('N/A') }}"
-      - "Job Status: {{ job_detail_response.response.status | default('N/A') }}"
+      - "Restore Destination Client: {{ job_detail_response.response.jobs[0].jobSummary.destinationClient.clientName | default('N/A') }}"
+      - "Restore Destination Path: {{ item.dest_path }}"
+      - "Job Phase: {{ job_detail_response.response.jobs[0].jobSummary.localizedOperationName | default('N/A') }}"
+      - "Job Status: {{ job_detail_response.response.jobs[0].localizedOperationName.status | default('N/A') }}"
   when: job_detail_response is defined
