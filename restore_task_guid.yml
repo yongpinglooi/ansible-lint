@@ -20,9 +20,9 @@
          | list | first).virtualMachineGUID
       }}
 
-- name: Build restore_point with GUID
+- name: Build restore_point with GUID by prepending vm_guid
   ansible.builtin.set_fact:
-    restore_point_guid: "{{ item.restore_point | regex_replace('^' ~ item.vm_guid_host, vm_guid) }}"
+    restore_point_guid: "{{ vm_guid ~ item.restore_point }}"
 
 - name: Start Out-of-Place Restore
   commvault.ansible.request:

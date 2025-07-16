@@ -32,13 +32,13 @@
         vm_guid: >-
           {{
             (vm_lookup.response.virtualMachines
-             | selectattr('client.clientName', 'equalto', vm_guid_host)
+             | selectattr('client.clientName', 'equalto', item.vm_guid_host)
              | list | first).virtualMachineGUID
           }}
 
-    - name: Build restore_point with GUID
+    - name: Build restore_point with GUID by prepending vm_guid
       ansible.builtin.set_fact:
-        restore_point_guid: "{{ restore_point | regex_replace('^' ~ vm_guid_host, vm_guid) }}"
+        restore_point_guid: "{{ vm_guid ~ item.restore_point }}"
 
     - name: Start Out-of-Place Restore Task
       commvault.ansible.request:
