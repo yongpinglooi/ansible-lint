@@ -1,0 +1,141 @@
+- name: Set scoped variables from item (strip quotes and convert to int)
+  ansible.builtin.set_fact:
+    associate_appID_unquoted: "{{ item.associate_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+    browseOption_appID_unquoted: "{{ item.browseOption_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+    destInst_appID_unquoted: "{{ item.destInst_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+
+- name: Get VM GUID from vm_guid_host
+  commvault.ansible.request:
+    webserver_hostname: "{{ http_hostname }}"
+    method: GET
+    url: "{0}/commandcenter/api/v4/virtualMachines?clientName={{ item.vm_guid_host }}"
+  register: vm_lookup
+
+- name: Set VM GUID
+  ansible.builtin.set_fact:
+    vm_guid: >-
+      {{
+        (vm_lookup.response.virtualMachines
+         | selectattr('client.clientName', 'equalto', item.vm_guid_host)
+         | list | first).virtualMachineGUID
+      }}
+
+- name: Build restore_point with GUID
+  ansible.builtin.set_fact:
+    restore_point_guid: "{{ item.restore_point | regex_replace('^' ~ item.vm_guid_host, vm_guid) }}"
+
+- name: Start Out-of-Place Restore
+  commvault.ansible.request:
+    webserver_hostname: "{{ http_hostname }}"
+    method: POST
+    url: "{0}/commandcenter/api/CreateTask"
+    payload:
+      taskInfo:
+        associations:
+          - clientName: "{{ item.client_name }}"
+            backupsetName: "{{ item.user_backupset }}"
+            subclientName: "{{ item.user_subclient }}"
+            instanceName: "{{ item.instanceName }}"
+            appName: "{{ item.appName }}"
+            applicationId: "{{ associate_appID_unquoted }}"
+        task:
+          taskType: 1
+          initiatedFrom: 2
+          policyType: 0
+          taskFlags:
+            disabled: false
+        subTasks:
+          - subTask:
+              subTaskType: 3
+              operationType: 1001
+            options:
+              restoreOptions:
+                impersonation:
+                  useImpersonation: false
+                virtualServerRstOption:
+                  isBlockLevelReplication: false
+                  isDiskBrowse: false
+                  viewType: 0
+                  isFileBrowse: true
+                browseOption:
+                  backupset:
+                    clientName: "{{ item.client_name }}"
+                    backupsetName: "{{ item.user_backupset }}"
+                    applicationId: "{{ browseOption_appID_unquoted }}"
+                  timeZone:
+                    TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
+                  commCellId: 2
+                  mediaOption:
+                    proxyForSnapClients:
+                      clientName: "{{ item.proxy_client }}"
+                destination:
+                  inPlace: false
+                  isLegalHold: false
+                  noOfStreams: 0
+                  destPath:
+                    - "{{ item.dest_path }}"
+                  destClient:
+                    clientName: "{{ item.new_client_name }}"
+                  destinationInstance:
+                    clientName: "{{ item.new_client_name }}"
+                    instanceName: "{{ item.destInst_instName }}"
+                    applicationId: "{{ destInst_appID_unquoted }}"
+                fileOption:
+                  sourceItem:
+                    - "{{ restore_point_guid }}"
+                commonOptions:
+                  restoreToDisk: true
+                  unconditionalOverwrite: false
+                  preserveLevel: 1
+                  stripLevelType: 0
+                  stripLevel: 0
+                  detectRegularExpression: true
+                  wildCard: false
+  register: restore_response
+  failed_when: restore_response.response.errorCode is defined and restore_response.response.errorCode != 0
+
+- name: Show restore response
+  debug:
+    var: restore_response
+
+- name: Extract Job ID
+  set_fact:
+    restore_job_id: "{{ restore_response.response.jobIds[0] | int }}"
+  when:
+    - restore_response.response is defined
+    - restore_response.response.jobIds is defined
+    - restore_response.response.jobIds | length > 0
+
+- name: Display Job ID
+  debug:
+    var: restore_job_id
+  when: restore_job_id is defined
+
+- name: Wait for job completion
+  commvault.ansible.job.status:
+    job_id: "{{ restore_job_id }}"
+    wait_for_job_completion: true
+  when: restore_job_id is defined
+  register: job_status_result
+
+- name: Display final job status
+  debug:
+    msg: "Job Status: {{ job_status_result.response.jobs[0].jobSummary.status | default('Unknown') }}"
+  when: job_status_result is defined
+
+- name: Get job detail
+  commvault.ansible.request:
+    webserver_hostname: "{{ http_hostname }}"
+    method: GET
+    url: "{0}/commandcenter/api/Job/{{ restore_job_id }}"
+  when: restore_job_id is defined
+  register: job_detail_response
+
+- name: Display restore destination info
+  debug:
+    msg:
+      - "Restore Destination Client: {{ job_detail_response.response.jobs[0].jobSummary.destinationClient.clientName | default('N/A') }}"
+      - "Restore Destination Path: {{ item.dest_path }}"
+      - "Job Phase: {{ job_detail_response.response.jobs[0].jobSummary.localizedOperationName | default('N/A') }}"
+      - "Job Status: {{ job_detail_response.response.jobs[0].jobSummary.status | default('N/A') }}"
+  when: job_detail_response is defined

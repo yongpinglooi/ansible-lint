@@ -1,0 +1,157 @@
+- name: Out-of-Place Restore using commvault.ansible.request module (Single Job)
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    regex_strip_quotes: "^['\"]?(.*?)['\"]?$"
+
+  tasks:
+    - name: Strip quotes from app ID variables using regex
+      ansible.builtin.set_fact:
+        associate_appID_unquoted: "{{ associate_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+        browseOption_appID_unquoted: "{{ browseOption_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+        destInst_appID_unquoted: "{{ destInst_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
+
+    - name: Log in to the Commcell
+      commvault.ansible.login:
+        webserver_hostname: "{{ http_hostname }}"
+        commcell_username: "{{ http_username }}"
+        commcell_password: "{{ http_password }}"
+        verify_ssl: false
+      register: login_response
+
+    - name: Get VM GUID from vm_guid_host
+      commvault.ansible.request:
+        webserver_hostname: "{{ http_hostname }}"
+        method: GET
+        url: "{0}/commandcenter/api/v4/virtualMachines?clientName={{ vm_guid_host }}"
+      register: vm_lookup
+
+    - name: Set VM GUID
+      ansible.builtin.set_fact:
+        vm_guid: >-
+          {{
+            (vm_lookup.response.virtualMachines
+             | selectattr('client.clientName', 'equalto', vm_guid_host)
+             | list | first).virtualMachineGUID
+          }}
+
+    - name: Build restore_point with GUID
+      ansible.builtin.set_fact:
+        restore_point_guid: "{{ restore_point | regex_replace('^' ~ vm_guid_host, vm_guid) }}"
+
+    - name: Start Out-of-Place Restore Task
+      commvault.ansible.request:
+        webserver_hostname: "{{ http_hostname }}"
+        method: POST
+        url: "{0}/commandcenter/api/CreateTask"
+        payload:
+          taskInfo:
+            associations:
+              - clientName: "{{ client_name }}"
+                backupsetName: "{{ user_backupset }}"
+                subclientName: "{{ user_subclient }}"
+                instanceName: "{{ instanceName }}"
+                appName: "{{ appName }}"
+                applicationId: "{{ associate_appID_unquoted }}"
+            task:
+              taskType: 1
+              initiatedFrom: 2
+              policyType: 0
+              taskFlags:
+                disabled: false
+            subTasks:
+              - subTask:
+                  subTaskType: 3
+                  operationType: 1001
+                options:
+                  restoreOptions:
+                    impersonation:
+                      useImpersonation: false
+                    virtualServerRstOption:
+                      isBlockLevelReplication: false
+                      isDiskBrowse: false
+                      viewType: 0
+                      isFileBrowse: true
+                    browseOption:
+                      backupset:
+                        clientName: "{{ client_name }}"
+                        backupsetName: "{{ user_backupset }}"
+                        applicationId: "{{ browseOption_appID_unquoted }}"
+                      timeZone:
+                        TimeZoneName: "(UTC+08:00) Kuala Lumpur, Singapore"
+                      commCellId: 2
+                      mediaOption:
+                        proxyForSnapClients:
+                          clientName: "{{ proxy_client }}"
+                    destination:
+                      inPlace: false
+                      isLegalHold: false
+                      noOfStreams: 0
+                      destPath:
+                        - "{{ dest_path }}"
+                      destClient:
+                        clientName: "{{ new_client_name }}"
+                      destinationInstance:
+                        clientName: "{{ new_client_name }}"
+                        instanceName: "{{ destInst_instName }}"
+                        applicationId: "{{ destInst_appID_unquoted }}"
+                    fileOption:
+                      sourceItem:
+                        - "{{ restore_point_guid }}"
+                    commonOptions:
+                      restoreToDisk: true
+                      unconditionalOverwrite: false
+                      preserveLevel: 1
+                      stripLevelType: 0
+                      stripLevel: 0
+                      detectRegularExpression: true
+                      wildCard: false
+      register: restore_response
+      failed_when: restore_response.response.errorCode is defined and restore_response.response.errorCode != 0
+
+    - name: Show restore response
+      ansible.builtin.debug:
+        var: restore_response
+
+    - name: Extract Job ID from response
+      ansible.builtin.set_fact:
+        restore_job_id: "{{ restore_response.response.jobIds[0] | int }}"
+      when:
+        - restore_response.response is defined
+        - restore_response.response.jobIds is defined
+        - restore_response.response.jobIds | length > 0
+
+    - name: Display Job ID
+      ansible.builtin.debug:
+        var: restore_job_id
+      when: restore_job_id is defined
+
+    - name: Wait for Job to Complete
+      commvault.ansible.job.status:
+        job_id: "{{ restore_job_id }}"
+        wait_for_job_completion: true
+      when: restore_job_id is defined
+      register: job_status_result
+
+    - name: Display Final Job Status
+      ansible.builtin.debug:
+        msg: "Job Status: {{ job_status_result.response.jobs[0].jobSummary.status }}"
+      when: job_status_result is defined
+
+    - name: Get detailed job info
+      commvault.ansible.request:
+        webserver_hostname: "{{ http_hostname }}"
+        method: GET
+        url: "{0}/commandcenter/api/Job/{{ restore_job_id }}"
+      when: restore_job_id is defined
+      register: job_detail_response
+
+    - name: Display restore destination info
+      ansible.builtin.debug:
+        msg:
+          - "Restore Destination Client: {{ job_detail_response.response.jobs[0].jobSummary.destinationClient.clientName | default('N/A') }}"
+          - "Restore Destination Path: {{ dest_path }}"
+          - "Job Phase: {{ job_detail_response.response.jobs[0].jobSummary.localizedOperationName | default('N/A') }}"
+          - "Job Status: {{ job_detail_response.response.jobs[0].jobSummary.status | default('N/A') }}"
+      when: job_detail_response is defined
