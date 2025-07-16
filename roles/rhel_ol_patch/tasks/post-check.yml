@@ -22,23 +22,14 @@
         var: full_fact_diff.diff_lines
       when: full_fact_diff.diff_lines | length > 0
 
-    # Optional: Warn if specific changes are detected
-    - name: Warn if IP addresses changed
+    - name: Compare kernel versions
       ansible.builtin.debug:
-        msg: "WARNING: IP address changes detected post patch."
-      when: "'ansible_all_ipv4_addresses' in full_fact_diff.diff"
+        msg: |
+          Kernel before patch: {{ pre_patch_facts.ansible_facts.ansible_kernel }}
+          Kernel after patch:  {{ post_patch_facts.ansible_facts.ansible_kernel }}
 
-    - name: Warn if mount points changed
+    - name: Compare OS release info
       ansible.builtin.debug:
-        msg: "WARNING: Mount point changes detected post patch."
-      when: "'ansible_mounts' in full_fact_diff.diff"
-
-    - name: Warn if kernel changed
-      ansible.builtin.debug:
-        msg: "WARNING: Kernel changed after patch."
-      when: "'ansible_kernel' in full_fact_diff.diff"
-
-    - name: Warn if OS version changed
-      ansible.builtin.debug:
-        msg: "WARNING: OS distribution or version changed after patch."
-      when: "'ansible_distribution' in full_fact_diff.diff or 'ansible_distribution_version' in full_fact_diff.diff"
+        msg: |
+          OS before patch: {{ pre_patch_facts.ansible_facts.ansible_distribution }} {{ pre_patch_facts.ansible_facts.ansible_distribution_version }}
+          OS after patch:  {{ post_patch_facts.ansible_facts.ansible_distribution }} {{ post_patch_facts.ansible_facts.ansible_distribution_version }}
