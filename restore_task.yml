@@ -4,7 +4,6 @@
     browseOption_appID_unquoted: "{{ item.browseOption_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
     destInst_appID_unquoted: "{{ item.destInst_appID | regex_replace(regex_strip_quotes, '\\1') | int }}"
 
-
 - name: Start Out-of-Place Restore
   commvault.ansible.request:
     webserver_hostname: "{{ http_hostname }}"
