@@ -24,17 +24,12 @@
       commvault.ansible.request:
         webserver_hostname: "{{ http_hostname }}"
         method: GET
-        url: "{0}/commandcenter/api/v4/virtualMachines?clientName={{ vm_guid_host }}"
+        url: "{0}/commandcenter/api/Client/byName=(clientName='{{ vm_guid_host }}')"
       register: vm_lookup
 
-    - name: Set VM GUID
+    - name: Set VM GUID from strGUID in vmStatusInfo
       ansible.builtin.set_fact:
-        vm_guid: >-
-          {{
-            (vm_lookup.response.virtualMachines
-             | selectattr('client.clientName', 'equalto', item.vm_guid_host)
-             | list | first).virtualMachineGUID
-          }}
+        vm_guid: "{{ vm_lookup.response.clientProperties[0].vmStatusInfo.strGUID }}"
 
     - name: Build restore_point with GUID by prepending vm_guid
       ansible.builtin.set_fact:
